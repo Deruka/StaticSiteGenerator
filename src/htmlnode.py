@@ -23,12 +23,22 @@ class LeafNode(HTMLNode):
         super().__init__(tag, value, None, props)
     
     def to_html(self):
+        if self.tag == "img":
+            props_string = self.props_to_html()
+            return f"<{self.tag}{props_string}/>"            
         if not self.value:
             raise ValueError("Leaf Node has no Value")
         if not self.tag:
             return str(self.value)
         props_string = self.props_to_html()
         return f"<{self.tag}{props_string}>{self.value}</{self.tag}>"
+    
+    def __eq__(self, other):
+        if not isinstance(other, LeafNode):
+            return False
+        return (self.tag == other.tag and
+                self.value == other.value and
+                self.props == other.props)
 
 class ParentNode(HTMLNode):
     def __init__(self, tag, children, props=None):
