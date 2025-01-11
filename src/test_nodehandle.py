@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links
+from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
 
 class TestNodehandle(unittest.TestCase):
     def test_singlenode_one_delimiter(self):
@@ -83,6 +83,103 @@ class TestNodehandle(unittest.TestCase):
         result = extract_markdown_links(text)
         self.assertEqual(result, [])
 
+    def test_splitnode_Image_text_frontandafter(self):
+        node = TextNode("This is text with an image ![to a cat meme](https://i.imgur.com/xFly57e.jpeg). Isn't that funny?", TextType.TEXT,)
+        result = split_nodes_image([node])
+        self.assertEqual(result, [
+                TextNode("This is text with an image ", TextType.TEXT),
+                TextNode("to a cat meme", TextType.IMAGE, "https://i.imgur.com/xFly57e.jpeg"),
+                TextNode(". Isn't that funny?", TextType.TEXT),
+            ])
+
+    def test_splitnode_Image_text_onlyafter(self):
+        node = TextNode("![A cat meme](https://i.imgur.com/xFly57e.jpeg). Isn't that funny?", TextType.TEXT,)
+        result = split_nodes_image([node])
+        self.assertEqual(result, [
+                TextNode("A cat meme", TextType.IMAGE, "https://i.imgur.com/xFly57e.jpeg"),
+                TextNode(". Isn't that funny?", TextType.TEXT),
+            ])
+        
+    def test_splitnode_Image_text_frontonly(self):
+        node = TextNode("Hey look, ![a cat meme](https://i.imgur.com/xFly57e.jpeg)", TextType.TEXT,)
+        result = split_nodes_image([node])
+        self.assertEqual(result, [
+                TextNode("Hey look, ", TextType.TEXT),
+                TextNode("a cat meme", TextType.IMAGE, "https://i.imgur.com/xFly57e.jpeg"),
+            ])    
+
+    def test_splitnode_Image_noimage(self):
+        node = TextNode("This is a Textnode without any image links to a funny cat meme.", TextType.TEXT)
+        result = split_nodes_image([node])
+        self.assertEqual(result, [TextNode("This is a Textnode without any image links to a funny cat meme.", TextType.TEXT)])
+
+    def test_splitnode_Image_2_links(self):
+        node = TextNode("here is a ![funny cat meme](https://i.imgur.com/xFly57e.jpeg) and a ![funny dog meme](https://i.imgur.com/0iFWjrp.jpeg)", TextType.TEXT)
+        result = split_nodes_image([node])
+        self.assertEqual(result, [
+                TextNode("here is a ", TextType.TEXT),
+                TextNode("funny cat meme", TextType.IMAGE, "https://i.imgur.com/xFly57e.jpeg"),
+                TextNode(" and a ", TextType.TEXT),
+                TextNode("funny dog meme", TextType.IMAGE, "https://i.imgur.com/0iFWjrp.jpeg")
+        ])
+
+    def test_splitnode_Link_text_frontandafter(self):
+        node = TextNode("This is text with a link [to youtube](https://www.youtube.com). What are we watching today?", TextType.TEXT,)
+        result = split_nodes_link([node])
+        self.assertEqual(result, [
+                TextNode("This is text with a link ", TextType.TEXT),
+                TextNode("to youtube", TextType.LINK, "https://www.youtube.com"),
+                TextNode(". What are we watching today?", TextType.TEXT),
+            ])
+
+    def test_splitnode_Link_text_onlyafter(self):
+        node = TextNode("[boot.dev](https://www.boot.dev) is an amazing site to learn programming", TextType.TEXT,)
+        result = split_nodes_link([node])
+        self.assertEqual(result, [
+                TextNode("boot.dev", TextType.LINK, "https://www.boot.dev"),
+                TextNode(" is an amazing site to learn programming", TextType.TEXT),
+            ])
+        
+    def test_splitnode_Link_text_frontonly(self):
+        node = TextNode("You should commission this artist: [5ushiroll](https://www.5ushiroll.com)", TextType.TEXT,)
+        result = split_nodes_link([node])
+        self.assertEqual(result, [
+                TextNode("You should commission this artist: ", TextType.TEXT),
+                TextNode("5ushiroll", TextType.LINK, "https://www.5ushiroll.com"),
+            ])    
+
+    def test_splitnode_Link_nolink(self):
+        node = TextNode("This is a Textnode without any links to a website.", TextType.TEXT)
+        result = split_nodes_link([node])
+        self.assertEqual(result, [TextNode("This is a Textnode without any links to a website.", TextType.TEXT)])
+
+    def test_splitnode_Link_2_links(self):
+        node = TextNode("This link goes to [youtube](https://www.youtube.com) and this one to [boot.dev](https://www.boot.dev). Where will you go?", TextType.TEXT)
+        result = split_nodes_link([node])
+        self.assertEqual(result, [
+                TextNode("This link goes to ", TextType.TEXT),
+                TextNode("youtube", TextType.LINK, "https://www.youtube.com"),
+                TextNode(" and this one to ", TextType.TEXT),
+                TextNode("boot.dev", TextType.LINK, "https://www.boot.dev"),
+                TextNode(". Where will you go?", TextType.TEXT),
+        ])
+
+    def test_splitnode_mixed_image_and_link(self):
+        node = TextNode(
+            "Here's a ![cute cat](https://cats.com/cat.jpg) and a link to [more cats](https://cats.com)",
+            TextType.TEXT
+        )
+        # First split images
+        nodes_after_images = split_nodes_image([node])
+        # Then split links in the resulting nodes
+        final_nodes = split_nodes_link(nodes_after_images)
+        
+        self.assertEqual(final_nodes, [
+            TextNode("Here's a ", TextType.TEXT),
+            TextNode("cute cat", TextType.IMAGE, "https://cats.com/cat.jpg"),
+            TextNode(" and a link to ", TextType.TEXT),
+            TextNode("more cats", TextType.LINK, "https://cats.com")
+        ])
 
 if __name__ == "__main__":
     unittest.main()
