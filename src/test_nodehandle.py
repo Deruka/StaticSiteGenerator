@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
+from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes
 
 class TestNodehandle(unittest.TestCase):
     def test_singlenode_one_delimiter(self):
@@ -180,6 +180,56 @@ class TestNodehandle(unittest.TestCase):
             TextNode(" and a link to ", TextType.TEXT),
             TextNode("more cats", TextType.LINK, "https://cats.com")
         ])
+
+    def test_text_to_node_all_in_one(self):
+        text = "This is **text** with an *italic* word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+        result = text_to_textnodes(text)
+        self.assertEqual(result, [
+    TextNode("This is ", TextType.TEXT),
+    TextNode("text", TextType.BOLD),
+    TextNode(" with an ", TextType.TEXT),
+    TextNode("italic", TextType.ITALIC),
+    TextNode(" word and a ", TextType.TEXT),
+    TextNode("code block", TextType.CODE),
+    TextNode(" and an ", TextType.TEXT),
+    TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+    TextNode(" and a ", TextType.TEXT),
+    TextNode("link", TextType.LINK, "https://boot.dev"),
+])
+
+    def test_text_to_node_missing_delimiter(self):
+        with self.assertRaises(Exception):
+            text ="This is text with a `code block` word, **a bold word block* an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg)"
+            text_to_textnodes(text)
+
+    def test_text_to_node_simple_text(self):
+        text = "this here is just very simple text that has nothing special to it, no formatting or anything else."
+        result = text_to_textnodes(text)
+        self.assertEqual(result, [TextNode("this here is just very simple text that has nothing special to it, no formatting or anything else.", TextType.TEXT),])
+
+    def test_text_to_node_empty_string(self):
+        text = ""
+        result = text_to_textnodes(text)
+        self.assertEqual(result, [TextNode("",TextType.TEXT)])
+
+    def test_text_to_node_mult_syntax(self):
+        text = "This is text with not **one**, but **two** bold syntaxes, aswell as not `one` or `two`, but `three` code block syntaxes and one ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg)"
+        result = text_to_textnodes(text)
+        self.assertEqual(result, [
+            TextNode("This is text with not ",TextType.TEXT),
+            TextNode("one", TextType.BOLD),
+            TextNode(", but ",TextType.TEXT),
+            TextNode("two", TextType.BOLD),
+            TextNode(" bold syntaxes, aswell as not ",TextType.TEXT),
+            TextNode("one", TextType.CODE),
+            TextNode(" or ",TextType.TEXT),
+            TextNode("two", TextType.CODE),
+            TextNode(", but ",TextType.TEXT),
+            TextNode("three", TextType.CODE),
+            TextNode(" code block syntaxes and one ",TextType.TEXT),
+            TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()
