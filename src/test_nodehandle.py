@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes
+from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks
 
 class TestNodehandle(unittest.TestCase):
     def test_singlenode_one_delimiter(self):
@@ -229,6 +229,52 @@ class TestNodehandle(unittest.TestCase):
             TextNode(" code block syntaxes and one ",TextType.TEXT),
             TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
         ])
+
+    def test_markdown_to_blocks_standard(self):
+        mdraw = """# This is a heading
+        
+        This is a paragraph of text. It has some **bold** and *italic* words inside of it.
+        
+        * This is the first list item in a list block
+        * This is a list item
+        * This is another list item"""
+        result = markdown_to_blocks(mdraw)
+        self.assertEqual(result, [
+            '# This is a heading', 
+            'This is a paragraph of text. It has some **bold** and *italic* words inside of it.', 
+            '* This is the first list item in a list block\n* This is a list item\n* This is another list item'
+            ])
+
+    def test_markdown_to_blocks_multlines(self):
+        mdraw = """# Heading
+
+    
+
+        Paragraph"""
+        result = markdown_to_blocks(mdraw)
+        self.assertEqual(result, [
+            '# Heading', 
+            'Paragraph',
+            ])
+
+    def test_markdown_to_blocks_mixed_indentation(self):
+        mdraw = """* List item 1
+          * List item 2
+         * List item 3"""
+        result = markdown_to_blocks(mdraw)
+        self.assertEqual(result, [
+            '* List item 1\n* List item 2\n* List item 3'
+            ])
+
+    def test_markdown_to_blocks_empty(self):
+        mdraw = """"""
+        result = markdown_to_blocks(mdraw)
+        self.assertEqual(result, [])
+
+    def test_markdown_to_blocks_singleline(self):
+        mdraw = """Just a single line"""
+        result = markdown_to_blocks(mdraw)
+        self.assertEqual(result, ["Just a single line"])
 
 
 if __name__ == "__main__":

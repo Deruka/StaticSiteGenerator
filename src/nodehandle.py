@@ -79,3 +79,15 @@ def text_to_textnodes(text):
     nodes_after_bold = split_nodes_delimiter(nodes_after_code, "**", TextType.BOLD)
     final_nodes = split_nodes_delimiter(nodes_after_bold, "*", TextType.ITALIC)
     return final_nodes
+
+def markdown_to_blocks(markdown):
+    md_blocks = []
+    wip_md = re.sub(r'\n\s*\n', '\n\n', markdown)
+    wip_blocks = wip_md.split("\n\n")
+    for block in wip_blocks:
+        lines = block.split("\n")
+        cleaned_lines = [line.strip() for line in lines]
+        cleaned_block = '\n'.join(cleaned_lines)
+        if cleaned_block:
+            md_blocks.append(cleaned_block)
+    return md_blocks
