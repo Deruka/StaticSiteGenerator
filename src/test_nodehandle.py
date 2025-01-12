@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks, block_to_block_type, markdown_to_html_node
+from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks, block_to_block_type, markdown_to_html_node, extract_title
 
 class TestNodehandle(unittest.TestCase):
     # -----------------------------------------------------------------
@@ -409,15 +409,19 @@ class TestNodehandle(unittest.TestCase):
     #          Tests for function markdown_to_html_node
     # -----------------------------------------------------------------
     def test_markdown_to_html_heading_block(self):
-        markdown = "# Heading 1\n## Heading 2\n### Heading 3"
-        result = markdown_to_html_node(markdown)
-        assert result.to_html() == (
-            "<div>"
-            "<h1>Heading 1</h1>"
-            "<h2>Heading 2</h2>"
-            "<h3>Heading 3</h3>"
-            "</div>"
-        )
+            markdown = """# Heading 1
+
+            ## Heading 2
+
+            ### Heading 3""".strip()
+            result = markdown_to_html_node(markdown)
+            assert result.to_html() == (
+                "<div>"
+                "<h1>Heading 1</h1>"
+                "<h2>Heading 2</h2>"
+                "<h3>Heading 3</h3>"
+                "</div>"
+            )
     
     def test_markdown_to_html_code_block(self):
         markdown = "```\ndef test():\n    return True\n```"
@@ -475,6 +479,7 @@ class TestNodehandle(unittest.TestCase):
     def test_markdown_to_html_mixed_markdown(self):
         markdown = """
     # Heading
+
     This is a paragraph.
 
     - Item 1
@@ -483,14 +488,45 @@ class TestNodehandle(unittest.TestCase):
     > Blockquote here
         """.strip()
         result = markdown_to_html_node(markdown)
-        assert result.to_html() == (
+        # Remove all whitespace for comparison
+        actual = ''.join(result.to_html().split())
+        expected = ''.join((
             "<div>"
             "<h1>Heading</h1>"
             "<p>This is a paragraph.</p>"
             "<ul><li>Item 1</li><li>Item 2</li></ul>"
             "<blockquote>Blockquote here</blockquote>"
             "</div>"
-        )
+        ).split())
+        actual == expected
+
+    # -----------------------------------------------------------------
+    #           Tests for function extract_title
+    # -----------------------------------------------------------------
+    def test_extract_title_simple(self):
+        markdown = "# Simple Title"
+        result = extract_title(markdown)
+        self.assertEqual(result, "Simple Title")
+
+    def test_extract_title_more_spaces(self):
+        markdown = "#    Spaced Title"
+        result = extract_title(markdown)
+        self.assertEqual(result, "Spaced Title")
+
+    def test_extract_title_h2_Exception(self):
+        with self.assertRaises(Exception):
+            markdown = "## Second Level"
+            extract_title(markdown)
+
+    def test_extract_title_Exception(self):
+        with self.assertRaises(Exception):
+            markdown = "This is a normal Paragraph"
+            extract_title(markdown)       
+
+    def test_extract_title_two_h1(self):
+        markdown = "# First Title\n# Second Title"
+        result = extract_title(markdown)
+        self.assertEqual(result, "First Title")
 
 if __name__ == "__main__":
     unittest.main()

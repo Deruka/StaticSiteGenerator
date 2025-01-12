@@ -117,23 +117,13 @@ def markdown_to_html_node(markdown):
     parent_nodes = [] # keep track of all created parent nodes
     for block in mdblocks:
         match block_to_block_type(block):
-
             case "heading":
-                # Split block into individual lines if necessary
-                heading_lines = block.splitlines()
-
-                for line in heading_lines:
-                    if line.startswith("#"): # process header lines as intended
-                        heading_level = len(re.match(r"^#+", line).group())  # Determine heading level
-                        headtag = f"h{heading_level}"  # Create tag (e.g., h1, h2, etc.)
-                        heading_text = line[heading_level + 1:]  # Extract heading text
-                        child_nodes = text_to_children(heading_text)  # Create child nodes from text
-                        hp_node = ParentNode(tag=headtag, children=child_nodes)  # Create <hX> node
-                        parent_nodes.append(hp_node)  # Add to parent node list
-                    else: # process non-headers as paragraphs
-                        child_nodes = text_to_children(line)  # Create child nodes from text
-                        hpp_node = ParentNode(tag="p", children=child_nodes)  # Create <p> node
-                        parent_nodes.append(hpp_node)  # Add to parent node list
+                    heading_level = len(re.match(r"^#+", block).group()) # Determine heading level
+                    headtag = f"h{heading_level}" # Create tag (e.g., h1, h2, etc.)
+                    heading_text = block[heading_level + 1:].strip() # Extract heading text
+                    child_nodes = text_to_children(heading_text) # Create child nodes from text
+                    hp_node = ParentNode(tag=headtag, children=child_nodes)  # Create <hX> node
+                    parent_nodes.append(hp_node) # Add to parent node list
 
             case "code":
                 # Extract the content between the code indicators
@@ -189,3 +179,11 @@ def text_to_children(text):
     # Convert TextNodes into HTMLNodes
     html_nodes = [text_node_to_html_node(node) for node in text_nodes]
     return html_nodes
+
+def extract_title(markdown):
+    # Split markdown into individual lines if necessary
+    heading_lines = markdown.splitlines()
+    for line in heading_lines:
+        if re.match(r'^#\s+.+', line):
+            return line.strip("#").strip()
+    raise Exception("No h1 header in markdown available")

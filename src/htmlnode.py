@@ -25,11 +25,11 @@ class LeafNode(HTMLNode):
     def to_html(self):
         if self.tag == "img":
             props_string = self.props_to_html()
-            return f"<{self.tag}{props_string}/>"            
-        if not self.value:
+            return f"<{self.tag}{props_string}/>"
+        if not self.value and self.tag:  # Only raise if we have a tag but no value
             raise ValueError("Leaf Node has no Value")
         if not self.tag:
-            return str(self.value)
+            return str(self.value) if self.value else ""  # Return empty string for empty text nodes
         props_string = self.props_to_html()
         return f"<{self.tag}{props_string}>{self.value}</{self.tag}>"
     
