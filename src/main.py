@@ -6,10 +6,10 @@ def main():
     destination = 'public'
     copy_directory(source, destination)
     # Generate the page
-    generate_page(
-        "content/index.md",  # from_path
-        "template.html",     # template_path
-        "public/index.html"  # dest_path
+    generate_pages_recursive(
+        "content",           # The top-level content directory
+        "template.html",     # The HTML template
+        "public"             # The top-level public directory
     )
 
 def copy_directory(source, destination):
@@ -48,5 +48,45 @@ def generate_page(from_path, template_path, dest_path):
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
     with open(dest_path, 'w') as file:
         file.write(template)
+
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    print(f"Generating page from {dir_path_content} to {dest_dir_path} using {template_path}")
+
+    # Make sure destination exists
+    if not os.path.exists(dest_dir_path):
+        os.mkdir(dest_dir_path)
+
+    for item in os.listdir(dir_path_content):
+        source_path = os.path.join(dir_path_content, item)
+        dest_path = os.path.join(dest_dir_path, item)
+
+        if os.path.isfile(source_path) and source_path.endswith(".md"):
+            dest_path = dest_path.replace(".md", ".html")
+            
+            # Read markdown and template
+            with open(source_path, 'r') as file:
+                markdown = file.read()
+            with open(template_path, 'r') as file:
+                template = file.read()
+
+            # Transform markdown to HTML
+            html_content = markdown_to_html_node(markdown).to_html()
+            title = extract_title(markdown)
+
+            # Replace placeholders in template
+            template = template.replace("{{ Title }}", title)
+            template = template.replace("{{ Content }}", html_content)
+
+            # Ensure destination directories exist
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+            # Write out the final HTML
+            with open(dest_path, 'w') as file:
+                file.write(template)
+
+        elif os.path.isdir(source_path):
+            # Ensure destination directory exists and recurse
+            os.makedirs(dest_path, exist_ok=True)
+            generate_pages_recursive(source_path, template_path, dest_path)
 
 main()
