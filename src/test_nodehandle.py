@@ -1,8 +1,11 @@
 import unittest
 from textnode import TextNode, TextType
-from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks, block_to_block_type
+from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks, block_to_block_type, markdown_to_html_node
 
 class TestNodehandle(unittest.TestCase):
+    # -----------------------------------------------------------------
+    #           Tests for function split_nodes_delimiter
+    # -----------------------------------------------------------------
     def test_singlenode_one_delimiter(self):
         node = TextNode("This is text with a `code block` word", TextType.TEXT)
         new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
@@ -51,8 +54,11 @@ class TestNodehandle(unittest.TestCase):
         new_nodes = split_nodes_delimiter([node], "`", TextType.CODE)
         self.assertEqual(new_nodes, [TextNode("This delimiter ", TextType.TEXT),
                                      TextNode("", TextType.CODE),
-                                     TextNode(" is empty", TextType.TEXT),])              
-
+                                     TextNode(" is empty", TextType.TEXT),])      
+                
+    # -----------------------------------------------------------------
+    #          Tests for function extract_markdown_images
+    # -----------------------------------------------------------------
     def test_extract_markdown_2_img(self):
         text = "This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif) and ![obi wan](https://i.imgur.com/fJRm4Vk.jpeg)"
         result = extract_markdown_images(text)
@@ -68,6 +74,9 @@ class TestNodehandle(unittest.TestCase):
         result = extract_markdown_images(text)
         self.assertEqual(result, [])
 
+    # -----------------------------------------------------------------
+    #         Tests for function extract_markdown_links
+    # -----------------------------------------------------------------
     def test_extract_markdown_2_links(self):
         text = "This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev)"
         result = extract_markdown_links(text)
@@ -83,6 +92,9 @@ class TestNodehandle(unittest.TestCase):
         result = extract_markdown_links(text)
         self.assertEqual(result, [])
 
+    # -----------------------------------------------------------------
+    #           Tests for function split_nodes_image
+    # -----------------------------------------------------------------
     def test_splitnode_Image_text_frontandafter(self):
         node = TextNode("This is text with an image ![to a cat meme](https://i.imgur.com/xFly57e.jpeg). Isn't that funny?", TextType.TEXT,)
         result = split_nodes_image([node])
@@ -123,6 +135,9 @@ class TestNodehandle(unittest.TestCase):
                 TextNode("funny dog meme", TextType.IMAGE, "https://i.imgur.com/0iFWjrp.jpeg")
         ])
 
+    # -----------------------------------------------------------------
+    #           Tests for function split_nodes_link
+    # -----------------------------------------------------------------
     def test_splitnode_Link_text_frontandafter(self):
         node = TextNode("This is text with a link [to youtube](https://www.youtube.com). What are we watching today?", TextType.TEXT,)
         result = split_nodes_link([node])
@@ -181,6 +196,9 @@ class TestNodehandle(unittest.TestCase):
             TextNode("more cats", TextType.LINK, "https://cats.com")
         ])
 
+    # -----------------------------------------------------------------
+    #           Tests for function text_to_textnodes
+    # -----------------------------------------------------------------
     def test_text_to_node_all_in_one(self):
         text = "This is **text** with an *italic* word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
         result = text_to_textnodes(text)
@@ -230,6 +248,9 @@ class TestNodehandle(unittest.TestCase):
             TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
         ])
 
+    # -----------------------------------------------------------------
+    #           Tests for function markdown_to_blocks
+    # -----------------------------------------------------------------
     def test_markdown_to_blocks_standard(self):
         mdraw = """# This is a heading
         
@@ -276,6 +297,9 @@ class TestNodehandle(unittest.TestCase):
         result = markdown_to_blocks(mdraw)
         self.assertEqual(result, ["Just a single line"])
 
+    # -----------------------------------------------------------------
+    #           Tests for function block_to_block_type
+    # -----------------------------------------------------------------
     def test_block_to_block_heading_2(self):
         block = "## Heading 2"
         result = block_to_block_type(block)
@@ -380,6 +404,93 @@ class TestNodehandle(unittest.TestCase):
         block = "1. First item\n3. Third item"
         result = block_to_block_type(block)
         self.assertEqual(result, "paragraph")
+
+    # -----------------------------------------------------------------
+    #          Tests for function markdown_to_html_node
+    # -----------------------------------------------------------------
+    def test_markdown_to_html_heading_block(self):
+        markdown = "# Heading 1\n## Heading 2\n### Heading 3"
+        result = markdown_to_html_node(markdown)
+        assert result.to_html() == (
+            "<div>"
+            "<h1>Heading 1</h1>"
+            "<h2>Heading 2</h2>"
+            "<h3>Heading 3</h3>"
+            "</div>"
+        )
+    
+    def test_markdown_to_html_code_block(self):
+        markdown = "```\ndef test():\n    return True\n```"
+        result = markdown_to_html_node(markdown)
+        assert result.to_html() == (
+            "<div>"
+            "<pre><code>def test():\nreturn True</code></pre>"
+            "</div>"
+        )
+
+    def test_markdown_to_html_quote_block(self):
+        markdown = "> This is a quote"
+        result = markdown_to_html_node(markdown)
+        assert result.to_html() == (
+            "<div>"
+            "<blockquote>This is a quote</blockquote>"
+            "</div>"
+        )
+
+    def test_markdown_to_html_unordered_list(self):
+        markdown = "- Item 1\n- Item 2\n- Item 3"
+        result = markdown_to_html_node(markdown)
+        assert result.to_html() == (
+            "<div>"
+            "<ul>"
+            "<li>Item 1</li>"
+            "<li>Item 2</li>"
+            "<li>Item 3</li>"
+            "</ul>"
+            "</div>"
+        )
+
+    def test_markdown_to_html_ordered_list(self):
+        markdown = "1. First Item\n2. Second Item\n3. Third Item"
+        result = markdown_to_html_node(markdown)
+        assert result.to_html() == (
+            "<div>"
+            "<ol>"
+            "<li>First Item</li>"
+            "<li>Second Item</li>"
+            "<li>Third Item</li>"
+            "</ol>"
+            "</div>"
+        )
+
+    def test_markdown_to_html_paragraph_block(self):
+        markdown = "This is a simple paragraph."
+        result = markdown_to_html_node(markdown)
+        assert result.to_html() == (
+            "<div>"
+            "<p>This is a simple paragraph.</p>"
+            "</div>"
+        )
+
+    def test_markdown_to_html_mixed_markdown(self):
+        markdown = """
+    # Heading
+    This is a paragraph.
+
+    - Item 1
+    - Item 2
+
+    > Blockquote here
+        """.strip()
+        result = markdown_to_html_node(markdown)
+        assert result.to_html() == (
+            "<div>"
+            "<h1>Heading</h1>"
+            "<p>This is a paragraph.</p>"
+            "<ul><li>Item 1</li><li>Item 2</li></ul>"
+            "<blockquote>Blockquote here</blockquote>"
+            "</div>"
+        )
 
 if __name__ == "__main__":
     unittest.main()

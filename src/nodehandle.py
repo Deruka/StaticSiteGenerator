@@ -1,4 +1,5 @@
-from textnode import TextNode, TextType
+from textnode import TextNode, TextType, text_node_to_html_node
+from htmlnode import ParentNode, LeafNode
 import re
 
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
@@ -111,3 +112,80 @@ def block_to_block_type(markdown):
     else:
         return "paragraph"
     
+def markdown_to_html_node(markdown):
+    mdblocks = markdown_to_blocks(markdown) # turn the markdown into separate blocks
+    parent_nodes = [] # keep track of all created parent nodes
+    for block in mdblocks:
+        match block_to_block_type(block):
+
+            case "heading":
+                # Split block into individual lines if necessary
+                heading_lines = block.splitlines()
+
+                for line in heading_lines:
+                    if line.startswith("#"): # process header lines as intended
+                        heading_level = len(re.match(r"^#+", line).group())  # Determine heading level
+                        headtag = f"h{heading_level}"  # Create tag (e.g., h1, h2, etc.)
+                        heading_text = line[heading_level + 1:]  # Extract heading text
+                        child_nodes = text_to_children(heading_text)  # Create child nodes from text
+                        hp_node = ParentNode(tag=headtag, children=child_nodes)  # Create <hX> node
+                        parent_nodes.append(hp_node)  # Add to parent node list
+                    else: # process non-headers as paragraphs
+                        child_nodes = text_to_children(line)  # Create child nodes from text
+                        hpp_node = ParentNode(tag="p", children=child_nodes)  # Create <p> node
+                        parent_nodes.append(hpp_node)  # Add to parent node list
+
+            case "code":
+                # Extract the content between the code indicators
+                code_text = block.strip("```").strip("\n")
+                # Create a LeafNode with the raw content and wrap it in <pre><code>
+                child_cp_node = LeafNode(tag="code", value=code_text)
+                cp_node = ParentNode(tag="pre", children=[child_cp_node])
+                # Append the structured node for code block
+                parent_nodes.append(cp_node)
+
+            case "quote":
+                quote_text = block[2:]  # Extract text after the "> " prefix
+                child_nodes = text_to_children(quote_text)  # Create child nodes
+                qp_node = ParentNode(tag="blockquote", children=child_nodes)  # Wrap in <blockquote>
+                parent_nodes.append(qp_node)  # Add finished node to parent node list
+
+            case "ordered_list":
+                list_items = block.splitlines()  # Split the block into list items
+                child_nodes = []  # Collect all <li> items
+                
+                # Process each list item
+                for item in list_items:
+                    item_text = item[item.index('.') + 2:]  # Skip item number and space
+                    child_nodes.append(ParentNode(tag="li", children=text_to_children(item_text)))  # Wrap in <li>
+
+                olp_node = ParentNode(tag="ol", children=child_nodes)  # Wrap all items in <ol>
+                parent_nodes.append(olp_node)  # Add finished node to parent node list
+
+            case "unordered_list":
+                list_items = block.splitlines()  # Split the block into list items
+                child_nodes = []  # Collect all <li> items
+
+                # Process each list item
+                for item in list_items:
+                    item_text = item[2:]  # Skip "- " or "* " prefix
+                    child_nodes.append(ParentNode(tag="li", children=text_to_children(item_text)))  # Wrap in <li>
+
+                ulp_node = ParentNode(tag="ul", children=child_nodes)  # Wrap all items in <ul>
+                parent_nodes.append(ulp_node)  # Add finished node to parent node list
+
+            case "paragraph":
+                child_nodes = text_to_children(block)  # Create children from the paragraph text
+                pp_node = ParentNode(tag="p", children=child_nodes)  # Wrap in <p>
+                parent_nodes.append(pp_node)  # Add finished paragraph node to parent node list
+
+    # Wrap all created parent nodes into a single <div> parent node
+    root_node = ParentNode(tag="div", children=parent_nodes)
+    return root_node
+
+def text_to_children(text):
+    # Convert the text into TextNodes
+    text_nodes = text_to_textnodes(text)
+    # Convert TextNodes into HTMLNodes
+    html_nodes = [text_node_to_html_node(node) for node in text_nodes]
+    return html_nodes
