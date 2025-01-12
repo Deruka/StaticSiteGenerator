@@ -1,6 +1,6 @@
 import unittest
 from textnode import TextNode, TextType
-from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks
+from nodehandle import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes, markdown_to_blocks, block_to_block_type
 
 class TestNodehandle(unittest.TestCase):
     def test_singlenode_one_delimiter(self):
@@ -276,6 +276,110 @@ class TestNodehandle(unittest.TestCase):
         result = markdown_to_blocks(mdraw)
         self.assertEqual(result, ["Just a single line"])
 
+    def test_block_to_block_heading_2(self):
+        block = "## Heading 2"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "heading")
+
+    def test_block_to_block_heading_5(self):
+        block = "##### Heading 5"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "heading")
+
+    def test_block_to_block_notaheading(self):
+        block = "#Not a heading"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "paragraph")            
+
+    def test_block_to_block_heading_6(self):
+        block = "###### Valid Heading"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "heading")
+
+    def test_block_to_block_invalid_heading(self):
+        block = "####### Invalid Heading"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "paragraph")
+
+    def test_block_to_block_quote_singleline(self):
+        block = "> This is a single-line quote"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "quote")
+
+    def test_block_to_block_quote_multiline(self):
+        block = "> Line one\n> Line two\n> Line three"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "quote")
+
+    def test_block_to_block_quote_invalid(self):
+        block = "> Line one\nNot a quote line\n> Line three"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "paragraph")
+
+    def test_block_to_block_code_single_line(self):
+        block = "```\nprint('Hello, world!')\n```"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "code")
+
+    def test_block_to_block_code_multiline(self):
+        block = "```\ndef hello():\n    return 'world'\n```"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "code")
+
+    def test_block_to_block_code_empty(self):
+        block = "```\n\n```"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "code")
+
+    def test_block_to_block_code_all_single_line(self):
+        block = "```print('Hello, world!')```"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "code")
+
+    def test_block_to_block_code_fullempty(self):
+        block = "``````"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "code")
+
+    def test_block_to_block_code_invalid(self):
+        block = "```\ndef hello():\nprint('Oops missing backticks')"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "paragraph")
+
+    def test_block_to_block_unordered_list_single_line(self):
+        block = "* Item one"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "unordered_list")
+
+    def test_block_to_block_unordered_list_multiline(self):
+        block = "- Item one\n- Item two\n- Item three"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "unordered_list")
+
+    def test_block_to_block_unordered_list_mixed_markers(self):
+        block = "* Item one\n- Item two"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "unordered_list")
+
+    def test_block_to_block_unordered_list_invalid(self):
+        block = "* Item one\nNot a list line\n* Item three"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "paragraph")
+
+    def test_block_to_block_ordered_list_single_line(self):
+        block = "1. First item"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "ordered_list")
+
+    def test_block_to_block_ordered_list_multiline(self):
+        block = "1. First item\n2. Second item\n3. Third item"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "ordered_list")
+
+    def test_block_to_block_ordered_list_invalid_increment(self):
+        block = "1. First item\n3. Third item"
+        result = block_to_block_type(block)
+        self.assertEqual(result, "paragraph")
 
 if __name__ == "__main__":
     unittest.main()

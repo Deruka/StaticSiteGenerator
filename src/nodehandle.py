@@ -91,3 +91,23 @@ def markdown_to_blocks(markdown):
         if cleaned_block:
             md_blocks.append(cleaned_block)
     return md_blocks
+
+def block_to_block_type(markdown):
+    if re.match(r'^#{1,6} ', markdown):
+        return "heading"
+    elif re.match(r'^```[\s\S]*```$', markdown, re.DOTALL):
+        return "code"
+    elif all(line.startswith('> ') for line in markdown.splitlines()):
+        return "quote"
+    elif all(re.match(r'^[*-] ', line) for line in markdown.splitlines()):
+        return "unordered_list"
+    elif all(re.match(r'^\d+\. ', line) for line in markdown.splitlines()):
+        lines = markdown.splitlines()
+        numbers = [int(re.match(r'^(\d+)\. ', line).group(1)) for line in lines]
+        if all(numbers[i] == i + 1 for i in range(len(numbers))):
+            return "ordered_list"
+        else:
+            return "paragraph"
+    else:
+        return "paragraph"
+    
